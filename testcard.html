@@ -1,0 +1,153 @@
+<html>
+	<head>
+		<title>Test Card</title>
+
+		<style>
+		html,body {
+			margin: 0;
+			padding: 0;
+		}
+
+		canvas {
+			width: 100%;
+		}
+		</style>
+	</head>
+
+	<body>
+		<canvas></canvas>
+
+		<script type="text/javascript">
+class Card {
+	constructor(ctx, options = null) {
+		this.ctx = ctx
+		
+		if(options == null)
+			options = {
+				width: 1280,
+				height: 720,
+				fps: 10,
+				colors: {
+					bg: '#000000',
+					fg: '#ffffff'
+				}
+			}
+		
+		this.options = options
+			
+		this.options.margins = {
+			h: options.width / 15,
+			v: options.height / 10,
+		}
+
+		this.ctx.canvas.width  = options.width
+		this.ctx.canvas.height = options.height
+
+		this.render = this.render.bind(this)
+
+		this._frame = 0
+
+		// duration in frames
+		this.duration = 2 * this.options.fps + 3
+
+		this.render()
+	}
+
+	get frame() {
+		return this._frame
+	}
+
+	set frame(frame) {
+		if (frame >= this.duration) {
+			this._frame = 0
+			return
+		}
+		
+		this._frame = frame
+	}
+
+	render() {
+		const ctx = this.ctx
+
+		ctx.save();
+		ctx.fillStyle = 'black';
+		ctx.fillRect(0,0,this.options.width,this.options.height);
+		
+		ctx.strokeStyle = this.options.colors.fg;
+		ctx.fillStyle = this.options.colors.fg;
+		ctx.lineCap = "round";
+		ctx.font = "30px Arial";
+		ctx.fillText("Frame: "+this.frame, this.options.margins.h, this.options.margins.v);
+
+
+		// marks
+		ctx.save();
+
+		ctx.lineWidth = 2;
+		ctx.strokeStyle = this.lightenDarkenColor(this.options.colors.fg, -128)
+		const markHeight = this.options.height / 10
+		const markNum = 2 * this.options.fps + 2
+		const markGap = Math.floor((this.options.width - 2 * this.options.margins.h) / markNum)
+
+		const markLeft = Math.floor(this.options.width / 2 - ((this.options.fps + 0.5) * markGap))
+		const markBottom = this.options.height - this.options.margins.v
+		const markTop = markBottom - markHeight;
+
+		for (var i=0; i < markNum; i++) {
+			const left = markLeft + i * markGap
+			ctx.beginPath();
+			ctx.moveTo(left, markBottom - markHeight)
+			ctx.lineTo(left, markBottom)
+			ctx.stroke();
+		}
+		ctx.save();
+
+
+		ctx.restore();
+
+		// frame marker
+		const markerLeft = markLeft + ((this.frame - 1) * markGap)
+
+		if(this.frame != 0 && this.frame != this.duration-1)
+			ctx.fillRect(markerLeft , markTop, markGap, markHeight)
+
+		this.frame++;
+		setTimeout(this.render, (1000/this.options.fps)*1)
+		return ctx;
+	}
+
+	lightenDarkenColor(col, amt) {
+		var usePound = false;
+
+		if (col[0] == "#") {
+				col = col.slice(1);
+				usePound = true;
+		}
+
+		var num = parseInt(col,16);
+
+		var r = (num >> 16) + amt;
+
+		if (r > 255) r = 255;
+		else if  (r < 0) r = 0;
+
+		var b = ((num >> 8) & 0x00FF) + amt;
+
+		if (b > 255) b = 255;
+		else if  (b < 0) b = 0;
+
+		var g = (num & 0x0000FF) + amt;
+
+		if (g > 255) g = 255;
+		else if (g < 0) g = 0;
+
+		return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
+	}
+}
+
+const ctx = document.querySelector('canvas').getContext('2d')
+
+var testCard = new Card(ctx);
+		</script>
+	</body>
+</html>
