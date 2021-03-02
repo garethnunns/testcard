@@ -24,12 +24,13 @@ class Card {
 		
 		if(options == null)
 			options = {
-				width: 1280,
-				height: 720,
-				fps: 10,
+				width: 1920,
+				height: 1080,
+				fps: 24,
 				colors: {
 					bg: '#000000',
-					fg: '#ffffff'
+					fg: '#ffffff',
+					accent: '#ffcc00'
 				}
 			}
 		
@@ -70,7 +71,7 @@ class Card {
 		const ctx = this.ctx
 
 		ctx.save();
-		ctx.fillStyle = 'black';
+		ctx.fillStyle = this.options.colors.bg;
 		ctx.fillRect(0,0,this.options.width,this.options.height);
 		
 		ctx.strokeStyle = this.options.colors.fg;
@@ -83,14 +84,16 @@ class Card {
 		// marks
 		ctx.save();
 
+		// line markers
 		ctx.lineWidth = 2;
-		ctx.strokeStyle = this.lightenDarkenColor(this.options.colors.fg, -128)
+		ctx.strokeStyle = this.hexToRgba(this.options.colors.fg, 0.5)
+
 		const markHeight = this.options.height / 10
-		const markNum = 2 * this.options.fps + 2
+		const markNum = this.duration - 1
 		const markGap = Math.floor((this.options.width - 2 * this.options.margins.h) / markNum)
 
 		const markLeft = Math.floor(this.options.width / 2 - ((this.options.fps + 0.5) * markGap))
-		const markBottom = this.options.height - this.options.margins.v
+		const markBottom = this.options.height - 2 * this.options.margins.v
 		const markTop = markBottom - markHeight;
 
 		for (var i=0; i < markNum; i++) {
@@ -102,6 +105,57 @@ class Card {
 		}
 		ctx.save();
 
+		// triangles
+		ctx.fillStyle = this.options.colors.accent;
+
+		const triTop = markTop - this.options.height / 100
+		const triBottom = markBottom + this.options.height / 100
+		const triWidth = this.options.width / 20
+		const triHeight = Math.min(this.options.height / 20,triWidth / 1.5)
+		const triFontSize = triWidth/2
+
+		var small = false;
+
+		ctx.font = `${triFontSize}px Arial`
+		ctx.textAlign = 'center'
+		//ctx.fillText("Hello World", canvas.width/2, canvas.height/2);
+
+		var offset = -1;
+
+		const triNum = 4;
+
+		for(var i = 0.5; i < (markNum - 1); i += (this.options.fps/triNum)) {
+			const cent = markLeft + i * markGap
+			const width = (1 - small * 0.5) * 0.5 * triWidth
+			const height = (1 - small * 0.5) * triHeight
+
+			// top triangles
+			ctx.beginPath();
+			ctx.moveTo(cent, triTop)
+			ctx.lineTo(cent + width, triTop - height)
+			ctx.lineTo(cent - width, triTop - height)
+			ctx.closePath()
+			ctx.fill()
+
+			if(!small) ctx.fillText(offset * this.options.fps, cent, triTop - height - triWidth/10)
+
+			// bottom triangles
+			ctx.beginPath();
+			ctx.moveTo(cent, triBottom)
+			ctx.lineTo(cent + width, triBottom + height)
+			ctx.lineTo(cent - width, triBottom + height)
+			ctx.closePath()
+			ctx.fill()
+
+			if(!small) ctx.fillText(offset, cent, triBottom + height + triFontSize)
+
+			small = !small
+			offset += 1/triNum
+		}
+
+		ctx.save();
+
+		// end of constants in image
 
 		ctx.restore();
 
@@ -116,32 +170,18 @@ class Card {
 		return ctx;
 	}
 
-	lightenDarkenColor(col, amt) {
-		var usePound = false;
+	hexToRgb(hex) {
+		const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+		return result ? {
+			r: parseInt(result[1], 16),
+			g: parseInt(result[2], 16),
+			b: parseInt(result[3], 16)
+		} : null
+	}
 
-		if (col[0] == "#") {
-				col = col.slice(1);
-				usePound = true;
-		}
-
-		var num = parseInt(col,16);
-
-		var r = (num >> 16) + amt;
-
-		if (r > 255) r = 255;
-		else if  (r < 0) r = 0;
-
-		var b = ((num >> 8) & 0x00FF) + amt;
-
-		if (b > 255) b = 255;
-		else if  (b < 0) b = 0;
-
-		var g = (num & 0x0000FF) + amt;
-
-		if (g > 255) g = 255;
-		else if (g < 0) g = 0;
-
-		return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
+	hexToRgba(hex, a) {
+		const rgb = this.hexToRgb(hex)
+		return `rgba(${rgb.r},${rgb.g},${rgb.b},${a})`
 	}
 }
 
