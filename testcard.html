@@ -26,7 +26,7 @@ class Card {
 			options = {
 				width: 1920,
 				height: 1080,
-				fps: 24,
+				fps: 25,
 				colors: {
 					bg: '#000000',
 					fg: '#ffffff',
@@ -59,12 +59,14 @@ class Card {
 	}
 
 	set frame(frame) {
-		if (frame >= this.duration) {
+		if (frame >= this.duration)
 			this._frame = 0
-			return
-		}
-		
-		this._frame = frame
+		else
+			this._frame = frame
+	}
+
+	get frameOffset() {
+		return this._frame - this.options.fps - 1
 	}
 
 	render() {
@@ -76,9 +78,8 @@ class Card {
 		
 		ctx.strokeStyle = this.options.colors.fg;
 		ctx.fillStyle = this.options.colors.fg;
+		ctx.textBaseline = "middle";
 		ctx.lineCap = "round";
-		ctx.font = "30px Arial";
-		ctx.fillText("Frame: "+this.frame, this.options.margins.h, this.options.margins.v);
 
 
 		// marks
@@ -112,13 +113,12 @@ class Card {
 		const triBottom = markBottom + this.options.height / 100
 		const triWidth = this.options.width / 20
 		const triHeight = Math.min(this.options.height / 20,triWidth / 1.5)
-		const triFontSize = triWidth/2
+		const triFontSize = triWidth/2.5
 
 		var small = false;
 
-		ctx.font = `${triFontSize}px Arial`
+		ctx.font = `${triFontSize}px Courier`
 		ctx.textAlign = 'center'
-		//ctx.fillText("Hello World", canvas.width/2, canvas.height/2);
 
 		var offset = -1;
 
@@ -137,7 +137,7 @@ class Card {
 			ctx.closePath()
 			ctx.fill()
 
-			if(!small) ctx.fillText(offset * this.options.fps, cent, triTop - height - triWidth/10)
+			if(!small) ctx.fillText(offset * this.options.fps, cent, triTop - height - triFontSize/2)
 
 			// bottom triangles
 			ctx.beginPath();
@@ -147,7 +147,7 @@ class Card {
 			ctx.closePath()
 			ctx.fill()
 
-			if(!small) ctx.fillText(offset, cent, triBottom + height + triFontSize)
+			if(!small) ctx.fillText(offset, cent, triBottom + height + triFontSize/2)
 
 			small = !small
 			offset += 1/triNum
@@ -160,10 +160,45 @@ class Card {
 		ctx.restore();
 
 		// frame marker
-		const markerLeft = markLeft + ((this.frame - 1) * markGap)
-
-		if(this.frame != 0 && this.frame != this.duration-1)
+		if(Math.abs(this.frameOffset) <= this.options.fps) {
+			const markerLeft = markLeft + ((this.frame - 1) * markGap)
 			ctx.fillRect(markerLeft , markTop, markGap, markHeight)
+
+			// circle counter
+			ctx.lineWidth = 20
+			ctx.strokeStyle = this.options.colors.accent
+			ctx.fillStyle = this.options.colors.fg
+
+			const circleRadius = Math.min(
+				(this.options.width - 2 * this.options.margins.h) / 6,
+				(this.options.height - 2 * this.options.margins.v) / 4
+			)
+
+			const circleCenter = {
+				x: this.options.margins.h + circleRadius,
+				y: this.options.margins.v * 3
+			}
+
+			const circleFontSize = circleRadius / 2
+			ctx.font = `${circleFontSize}px Courier`
+
+			const frameAngle = 0
+
+			ctx.beginPath()
+			ctx.arc(circleCenter.x, circleCenter.y, circleRadius,
+				this.mapRange([0,this.options.fps],[-0.5,1.5],this.frameOffset) * Math.PI,
+				this.mapRange([-this.options.fps,0],[-0.5,1.5],this.frameOffset) * Math.PI)
+			ctx.stroke()
+
+			if(this.frameOffset == 0) {
+				ctx.fill()
+			}
+
+			ctx.fillStyle = this.options.colors.accent
+			ctx.fillText(
+				(this.frameOffset < 0 ? '-':'+') + this.zeroPad(Math.abs(this.frameOffset),this.options.fps.toString().length), 
+				circleCenter.x, circleCenter.y)
+		}
 
 		this.frame++;
 		setTimeout(this.render, (1000/this.options.fps)*1)
@@ -182,6 +217,15 @@ class Card {
 	hexToRgba(hex, a) {
 		const rgb = this.hexToRgb(hex)
 		return `rgba(${rgb.r},${rgb.g},${rgb.b},${a})`
+	}
+
+	mapRange (from, to, s) {
+		return Math.max(to[0],Math.min(to[1],to[0] + (s - from[0]) * (to[1] - to[0]) / (from[1] - from[0])))
+	}
+
+	zeroPad(num, places) {
+		var zero = places - num.toString().length + 1;
+		return Array(+(zero > 0 && zero)).join("0") + num;
 	}
 }
 
