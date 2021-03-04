@@ -11,11 +11,17 @@
 		canvas {
 			width: 100%;
 		}
+
+		img {
+			display: none;
+		}
 		</style>
 	</head>
 
 	<body>
 		<canvas></canvas>
+
+		<img src="img/sample-logo-1.png" />
 
 		<script type="text/javascript">
 class Card {
@@ -87,7 +93,27 @@ class Card {
 		ctx.textBaseline = "middle";
 		ctx.lineCap = "round";
 
-		// marks
+
+		// custom logo
+		const img = document.querySelector('img')
+		const imgRatio = img.width / img.height
+		
+		const imgMaxWidth = this.options.width / 6
+		const imgMaxHeight = this.options.height / 4
+
+		var imgWidth = imgMaxWidth
+		var imgHeight = imgWidth * imgRatio
+
+		if (imgHeight > imgMaxHeight) {
+			imgHeight = imgMaxHeight
+			imgWidth = imgHeight / imgRatio
+		}
+
+		const imgX = this.options.width / 2 - imgWidth / 2
+		const imgY = (this.options.height * 0.6) / 2 - imgWidth / 2
+
+  	ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight)
+
 		ctx.save();
 
 		// markers
@@ -109,7 +135,10 @@ class Card {
 		const triHeight = Math.min(this.options.height / 20,triWidth / 1.5)
 		const triFontSize = triWidth/2.5
 
-		const triFrameRate = Math.floor((this.duration / 9) / 5) * 5
+		var triFrameRate = Math.ceil((this.duration / 9) / 5) * 5
+
+		if (this.options.fps <= 5)
+			triFrameRate = 1
 
 		var small = Math.floor((this.duration / triFrameRate) / 2) % 2 == 1
 
@@ -176,8 +205,8 @@ class Card {
 		)
 
 		const circleCenter = {
-			x: this.options.margins.h + circleRadius,
-			y: this.options.margins.v * 3
+			x: this.options.width - this.options.margins.h - circleRadius,
+			y: (this.options.height * 0.6) / 2
 		}
 
 		const circleFontSize = circleRadius / 2
