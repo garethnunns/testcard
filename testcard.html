@@ -32,7 +32,7 @@ class Card {
 			options = {
 				width: 1920,
 				height: 1080,
-				fps: 25,
+				fps: 24,
 				seconds: 2,
 				extraFrame: true,
 				colors: {
@@ -179,7 +179,7 @@ class Card {
 				ctx.closePath()
 				ctx.fill()
 
-				if(!small) ctx.fillText(this.addSign(offset), cent, triBottom + height + triFontSize/2)
+				if(!small) ctx.fillText(this.addSign(offset * 1000/this.options.fps), cent, triBottom + height + triFontSize/2)
 
 				small = !small
 			}
@@ -254,12 +254,12 @@ class Card {
 	}
 
 	zeroPad(num, places) {
-		var zero = places - num.toString().length + 1;
-		return Array(+(zero > 0 && zero)).join("0") + num;
+		const zero = places - num.toString().length + 1
+		return Array(+(zero > 0 && zero)).join("0") + num
 	}
 
 	addSign(num) {
-		return (num < 0 ? '' : '+') + num
+		return (num < 0 ? '' : '+') + Math.round(num * 100) / 100
 	}
 }
 
